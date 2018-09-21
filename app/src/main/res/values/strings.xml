@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AppStreetAssignment</string>
+    <string name="two">2 columns</string>
+    <string name="three">3 Columns</string>
+    <string name="four">4 Columns</string>
+    <string name="action_search">Search</string>
+</resources>

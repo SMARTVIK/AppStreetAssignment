@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search"
+        android:orderInCategory="0"
+        android:title="@string/action_search"
+        app:showAsAction="always" />
+
+    <group
+        android:id="@+id/group"
+        android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/two_column"
+            android:title="@string/two" />
+        <item
+            android:iconTint="@color/colorPrimary"
+            android:id="@+id/three_column"
+            android:title="@string/three" />
+
+        <item
+            android:iconTint="@color/colorPrimary"
+            android:id="@+id/four_column"
+            android:title="@string/four" />
+    </group>
+</menu>
