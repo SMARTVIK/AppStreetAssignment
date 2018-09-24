@@ -1,18 +1,19 @@
 package com.hunter.appstreetassignment;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -26,42 +27,68 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.gson.Gson;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-
 public class MainActivity extends AppCompatActivity {
 
+    private static final int EXTERNAL_STORAGE_PERMISSION = 100;
     private Toolbar toolbar, searchtollbar;
     private Menu search_menu;
     private MenuItem item_search;
-    private ArrayList<Image.ImagesBean> mImages = new ArrayList<>();
+    private ArrayList<ImageModel.HitsBean> mImages = new ArrayList<>();
     private GridLayoutManager mGridLayoutManager;
     private ImagesAdapter imagesAdapter;
     public static int currentPosition;
     private static final String position = "position";
+    private Menu overflow;
+    private GridFragment gridFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        setSearchtoolbar();
 
         if (savedInstanceState != null) {
             currentPosition = savedInstanceState.getInt(position, 0);
             return;
         }
+        checkStoragePermission();
+        loadFragment();
+    }
 
+    private void checkStoragePermission() {
+        if(ActivityCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},EXTERNAL_STORAGE_PERMISSION);
+            return;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == EXTERNAL_STORAGE_PERMISSION && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            loadFragment();
+        }else{
+            showAlasMessage();
+        }
+    }
+
+    private void showAlasMessage() {
+
+
+
+    }
+
+    private void loadFragment() {
+        gridFragment = new GridFragment();
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager
                 .beginTransaction()
-                .add(R.id.fragment_container, new GridFragment(), GridFragment.class.getSimpleName())
+                .add(R.id.fragment_container, gridFragment, GridFragment.class.getSimpleName())
                 .commit();
     }
 
@@ -71,10 +98,10 @@ public class MainActivity extends AppCompatActivity {
         outState.putInt(position, currentPosition);
     }
 
-/*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
+        this.overflow = menu;
         inflater.inflate(R.menu.main, menu);
         return true;
     }
@@ -85,17 +112,17 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.two_column:
                 item.setChecked(true);
-                mGridLayoutManager.setSpanCount(2);
+                gridFragment.setSpanCount(2);
                 break;
 
             case R.id.three_column:
                 item.setChecked(true);
-                mGridLayoutManager.setSpanCount(3);
+                gridFragment.setSpanCount(3);
                 break;
 
             case R.id.four_column:
                 item.setChecked(true);
-                mGridLayoutManager.setSpanCount(4);
+                gridFragment.setSpanCount(4);
                 break;
 
             case R.id.action_search:
@@ -109,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public void setSearchtollbar() {
+    public void setSearchtoolbar() {
         searchtollbar = (Toolbar) findViewById(R.id.searchtoolbar);
 
         if (searchtollbar != null) {
@@ -150,11 +177,10 @@ public class MainActivity extends AppCompatActivity {
 
 
         } else
-            Log.d("toolbar", "setSearchtollbar: NULL");
+            Log.d("toolbar", "setSearchtoolbar: NULL");
     }
 
-    public void initSearchView()
-    {
+    public void initSearchView() {
         final SearchView searchView = (SearchView) search_menu.findItem(R.id.action_filter_search).getActionView();
         // Enable/Disable Submit button in the keyboard
         searchView.setSubmitButtonEnabled(false);
@@ -163,13 +189,12 @@ public class MainActivity extends AppCompatActivity {
         closeButton.setImageResource(R.drawable.ic_close);
         // set hint and the text colors
 
-        EditText txtSearch = ((EditText) searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text));
+        final EditText txtSearch = ((EditText) searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text));
         txtSearch.setHint("Search..");
         txtSearch.setHintTextColor(Color.DKGRAY);
         txtSearch.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
 
         // set the cursor
-
         AutoCompleteTextView searchTextView = (AutoCompleteTextView) searchView.findViewById(android.support.v7.appcompat.R.id.search_src_text);
         try {
             Field mCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
@@ -195,8 +220,20 @@ public class MainActivity extends AppCompatActivity {
             }
 
             public void callSearch(String query) {
-                //Do searching
-                Log.i("query", "" + query);
+                gridFragment.isSearching(true, query);
+            }
+        });
+
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                txtSearch.setText("");
+                gridFragment.isSearching(false, "");
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+                    circleReveal(R.id.searchtoolbar, 1, true, false);
+                else
+                    searchtollbar.setVisibility(View.GONE);
             }
         });
 
@@ -234,5 +271,4 @@ public class MainActivity extends AppCompatActivity {
         // start the animation
         anim.start();
     }
-*/
 }

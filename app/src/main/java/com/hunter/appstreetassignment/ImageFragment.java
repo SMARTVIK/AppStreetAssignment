@@ -2,7 +2,6 @@ package com.hunter.appstreetassignment;
 
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,17 +14,16 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
-
-import javax.sql.DataSource;
+import com.hunter.appstreetassignment.database.Image;
 
 public class ImageFragment extends Fragment {
 
   private static final String KEY_IMAGE_RES = "com.google.samples.gridtopager.key.imageRes";
 
-  public static ImageFragment newInstance(Image.ImagesBean drawableRes) {
+  public static ImageFragment newInstance(Image drawableRes) {
     ImageFragment fragment = new ImageFragment();
     Bundle argument = new Bundle();
-    argument.putString(KEY_IMAGE_RES, drawableRes.getUrl());
+    argument.putString(KEY_IMAGE_RES, drawableRes.getImagePath());
     fragment.setArguments(argument);
     return fragment;
   }

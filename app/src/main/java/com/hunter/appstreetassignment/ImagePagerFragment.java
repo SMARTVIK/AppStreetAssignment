@@ -11,6 +11,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.hunter.appstreetassignment.database.Image;
+
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +25,7 @@ public class ImagePagerFragment extends Fragment {
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     viewPager = (ViewPager) inflater.inflate(R.layout.fragment_pager, container, false);
     ImagePagerAdapter imagePagerAdapter = new ImagePagerAdapter(this);
-    imagePagerAdapter.setData(getArguments().<Image.ImagesBean>getParcelableArrayList("list"));
+    imagePagerAdapter.setData(getArguments().<Image>getParcelableArrayList("list"));
     viewPager.setAdapter(imagePagerAdapter);
     viewPager.setCurrentItem(MainActivity.currentPosition);
     viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {

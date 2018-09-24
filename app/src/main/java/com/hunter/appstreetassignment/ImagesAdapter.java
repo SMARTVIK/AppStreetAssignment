@@ -13,10 +13,10 @@ import java.util.ArrayList;
 
 public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.ViewHolder> {
 
-    private final OnItemClick<Image.ImagesBean> onItemClick;
-    private ArrayList<Image.ImagesBean> data = new ArrayList<>();
+    private final OnItemClick<ImageModel.HitsBean> onItemClick;
+    private ArrayList<ImageModel.HitsBean> data = new ArrayList<>();
 
-    public ImagesAdapter(OnItemClick<Image.ImagesBean> onItemClick) {
+    public ImagesAdapter(OnItemClick<ImageModel.HitsBean> onItemClick) {
         this.onItemClick = onItemClick;
     }
 
@@ -31,9 +31,9 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.ViewHolder
               loadImage(viewHolder.image,data.get(i));
     }
 
-    private void loadImage(ImageView image, Image.ImagesBean image1) {
+    private void loadImage(ImageView image, ImageModel.HitsBean image1) {
         Picasso.get()
-                .load(image1.getUrl())
+                .load(image1.getPreviewURL())
                 .placeholder(R.mipmap.ic_launcher)
                 .into(image);
     }
@@ -43,7 +43,7 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.ViewHolder
         return data.size();
     }
 
-    public void setData(ArrayList<Image.ImagesBean> data) {
+    public void setData(ArrayList<ImageModel.HitsBean> data) {
         this.data = data;
         notifyDataSetChanged();
     }

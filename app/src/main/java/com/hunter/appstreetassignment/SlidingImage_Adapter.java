@@ -6,7 +6,6 @@ import android.support.v4.view.PagerAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
@@ -16,12 +15,12 @@ import java.util.ArrayList;
 public class SlidingImage_Adapter extends PagerAdapter {
  
  
-    private ArrayList<Image.ImagesBean> images;
+    private ArrayList<ImageModel.HitsBean> images;
     private LayoutInflater inflater;
     private Context context;
  
  
-    public SlidingImage_Adapter(Context context, ArrayList<Image.ImagesBean> images) {
+    public SlidingImage_Adapter(Context context, ArrayList<ImageModel.HitsBean> images) {
         this.context = context;
         this.images=images;
         inflater = LayoutInflater.from(context);
@@ -61,9 +60,9 @@ public class SlidingImage_Adapter extends PagerAdapter {
         return null;
     }
 
-    private void loadImage(ImageView image, Image.ImagesBean image1) {
+    private void loadImage(ImageView image, ImageModel.HitsBean image1) {
         Picasso.get()
-                .load(image1.getUrl())
+                .load(image1.getPreviewURL())
                 .placeholder(R.mipmap.ic_launcher)
                 .into(image);
     }
