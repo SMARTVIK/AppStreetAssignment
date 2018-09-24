@@ -1,9 +1,8 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.simplegallerycaching;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
@@ -15,32 +14,47 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
+import com.hunter.appstreetassignment.R;
 import com.hunter.appstreetassignment.database.Image;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class GridAdapter extends RecyclerView.Adapter<GridAdapter.ImageViewHolder> {
+public class GridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int PROGRESS_VIEW = 2;
+    private static final int NORMAL_VIEW = 1;
 
     private ArrayList<ImageModel.HitsBean> data = new ArrayList<>();
-    private List<Image> loadedData;
+    private List<Image> loadedData = new ArrayList<>();
     private Context context;
+    private boolean showProgress;
+
 
     public void setData(ArrayList<ImageModel.HitsBean> data) {
         this.data = data;
         notifyDataSetChanged();
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (showProgress && position == loadedData.size()) {
+            return PROGRESS_VIEW;
+        } else {
+            return NORMAL_VIEW;
+        }
+    }
+
     public void setLoadedData(List<Image> loadedData) {
         this.loadedData = loadedData;
+        notifyDataSetChanged();
     }
 
     /**
@@ -62,21 +76,34 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.ImageViewHolde
       this.viewHolderListener = new ViewHolderListenerImpl(fragment);
   }
 
-  @Override
-  public ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-    View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.image_item, parent, false);
-    return new ImageViewHolder(view, requestManager, viewHolderListener);
-  }
 
-  @Override
-  public void onBindViewHolder(ImageViewHolder holder, int position) {
-    holder.onBind();
-  }
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        RecyclerView.ViewHolder viewHolder;
+        if (PROGRESS_VIEW == viewType) {
+            viewHolder =  new ProgressViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_view, parent, false));
+        } else {
+            viewHolder =  new ImageViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.image_item, parent, false),requestManager, viewHolderListener);
+        }
+        return viewHolder;
+    }
 
-  @Override
-  public int getItemCount() {
-    return loadedData==null?0:loadedData.size();
-  }
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder holder1, int position) {
+        if (holder1 instanceof ImageViewHolder && position != loadedData.size()) {
+            ((ImageViewHolder) holder1).onBind();
+        }
+    }
+
+    public void setShowProgress(boolean showProgress) {
+        this.showProgress = showProgress;
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemCount() {
+        return showProgress ? loadedData.size() + 1 : loadedData.size();
+    }
 
   /**
    * Default {@link ViewHolderListener} implementation.
@@ -161,23 +188,25 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.ImageViewHolde
       int adapterPosition = getAdapterPosition();
       setImage(adapterPosition);
       image.setTransitionName(loadedData.get(adapterPosition).getImagePath());
+//      image.setTransitionName(data.get(adapterPosition).getPreviewURL());
     }
 
     void setImage(final int adapterPosition) {
       // Load the image with Glide to prevent OOM error when the image drawables are very large.
-        File file = new File(loadedData.get(adapterPosition).getImagePath());
+//        File file = new File(loadedData.get(adapterPosition).getImagePath());
+        String stringUrl = loadedData.get(adapterPosition).getImagePath();
         Glide.with(context)
-                .load(file.getAbsolutePath()).apply(new RequestOptions().diskCacheStrategy(DiskCacheStrategy.RESOURCE))
+                .load(stringUrl).apply(new RequestOptions().diskCacheStrategy(DiskCacheStrategy.RESOURCE))
                 .listener(new RequestListener<Drawable>() {
                     @Override
-                    public boolean onLoadFailed(@Nullable GlideException e, Object model,
-                                                Target<Drawable> target, boolean isFirstResource) {
+                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                         viewHolderListener.onLoadCompleted(image, adapterPosition);
                         return false;
                     }
 
                     @Override
-                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                        L.d(loadedData.get(adapterPosition).getImagePath());
                         viewHolderListener.onLoadCompleted(image, adapterPosition);
                         return false;
                     }
@@ -191,5 +220,12 @@ public class GridAdapter extends RecyclerView.Adapter<GridAdapter.ImageViewHolde
       viewHolderListener.onItemClicked(view, getAdapterPosition());
     }
   }
+
+    class ProgressViewHolder extends RecyclerView.ViewHolder{
+
+        public ProgressViewHolder(View itemView) {
+            super(itemView);
+        }
+    }
 
 }

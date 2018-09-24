@@ -1,4 +1,4 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.detail;
 
 import android.content.Context;
 import android.os.Parcelable;
@@ -8,21 +8,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.hunter.appstreetassignment.R;
+import com.hunter.appstreetassignment.simplegallerycaching.ImageModel;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
 public class SlidingImage_Adapter extends PagerAdapter {
- 
- 
+
     private ArrayList<ImageModel.HitsBean> images;
     private LayoutInflater inflater;
     private Context context;
- 
- 
+
     public SlidingImage_Adapter(Context context, ArrayList<ImageModel.HitsBean> images) {
         this.context = context;
-        this.images=images;
+        this.images = images;
         inflater = LayoutInflater.from(context);
     }
  

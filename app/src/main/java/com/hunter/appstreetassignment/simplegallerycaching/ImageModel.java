@@ -1,4 +1,4 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.simplegallerycaching;
 
 import android.os.Parcel;
 import android.os.Parcelable;

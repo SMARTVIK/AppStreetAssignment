@@ -1,4 +1,4 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.simplegallerycaching;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.hunter.appstreetassignment.R;
 import com.hunter.appstreetassignment.database.Image;
 
 import java.util.List;
@@ -42,21 +43,19 @@ public class ImagePagerFragment extends Fragment {
   }
 
   private void prepareSharedElementTransition() {
-    Transition transition =
-            TransitionInflater.from(getContext())
-                    .inflateTransition(R.transition.image_shared_element_transition);
-    setSharedElementEnterTransition(transition);
-    setEnterSharedElementCallback(
-            new SharedElementCallback() {
-              @Override
-              public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-                Fragment currentFragment = (Fragment) viewPager.getAdapter().instantiateItem(viewPager, MainActivity.currentPosition);
-                View view = currentFragment.getView();
-                if (view == null) {
-                  return;
-                }
-                sharedElements.put(names.get(0), view.findViewById(R.id.image));
-              }
-            });
+      Transition transition = TransitionInflater.from(getContext()).inflateTransition(R.transition.image_shared_element_transition);
+      setSharedElementEnterTransition(transition);
+      setEnterSharedElementCallback(
+              new SharedElementCallback() {
+                  @Override
+                  public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+                      Fragment currentFragment = (Fragment) viewPager.getAdapter().instantiateItem(viewPager, MainActivity.currentPosition);
+                      View view = currentFragment.getView();
+                      if (view == null) {
+                          return;
+                      }
+                      sharedElements.put(names.get(0), view.findViewById(R.id.image));
+                  }
+              });
   }
 }

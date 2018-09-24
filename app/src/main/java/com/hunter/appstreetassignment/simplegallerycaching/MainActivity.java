@@ -1,4 +1,4 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.simplegallerycaching;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -26,6 +26,9 @@ import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.hunter.appstreetassignment.detail.ImagesAdapter;
+import com.hunter.appstreetassignment.R;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -56,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
             currentPosition = savedInstanceState.getInt(position, 0);
             return;
         }
-        checkStoragePermission();
+//        checkStoragePermission();
         loadFragment();
     }
 
@@ -236,7 +239,6 @@ public class MainActivity extends AppCompatActivity {
                     searchtollbar.setVisibility(View.GONE);
             }
         });
-
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

@@ -1,4 +1,4 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.simplegallerycaching;
 
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;

@@ -1,10 +1,13 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.detail;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
+
+import com.hunter.appstreetassignment.R;
+import com.hunter.appstreetassignment.simplegallerycaching.ImageModel;
 
 import java.util.ArrayList;
 

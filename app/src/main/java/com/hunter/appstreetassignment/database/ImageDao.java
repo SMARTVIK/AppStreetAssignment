@@ -19,6 +19,8 @@ public interface ImageDao {
    @Query("DELETE FROM image_table")
    void deleteAll();
 
+   public String tag="";
+
    @Query("SELECT * from image_table")
    LiveData<List<Image>> getAllImages();
 

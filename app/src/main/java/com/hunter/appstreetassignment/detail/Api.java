@@ -1,4 +1,6 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.detail;
+
+import com.hunter.appstreetassignment.simplegallerycaching.ImageModel;
 
 import retrofit2.Call;
 import retrofit2.http.GET;

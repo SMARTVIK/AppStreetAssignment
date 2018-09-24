@@ -32,8 +32,6 @@ public class ImageViewModel extends AndroidViewModel {
     }
 
     public void getImagesStartingaWith(String searchQuery) {
-
         mRepository.getImagesStartingWith(searchQuery);
-
     }
 }

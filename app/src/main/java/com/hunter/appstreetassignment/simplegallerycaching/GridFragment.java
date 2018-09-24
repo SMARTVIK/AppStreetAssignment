@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.simplegallerycaching;
 
 import android.app.ProgressDialog;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -34,23 +33,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnLayoutChangeListener;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.hunter.appstreetassignment.detail.Api;
+import com.hunter.appstreetassignment.R;
 import com.hunter.appstreetassignment.database.Image;
 import com.hunter.appstreetassignment.database.ImageViewModel;
 import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.squareup.picasso.Picasso;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,35 +59,57 @@ public class GridFragment extends Fragment {
     private List<Image> mSearchingImages = new ArrayList<>();
     private GridLayoutManager gridLayoutManager;
     private boolean isSearching;
-    private String searchQuery="";
+    private String searchQuery = "";
     private ImageViewModel imageViewModel;
+    private EndlessRecyclerViewScrollListener endlessListener;
+    private int spanCount = 2;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         recyclerView = (RecyclerView) inflater.inflate(R.layout.grid, container, false);
         imageViewModel = ViewModelProviders.of(this).get(ImageViewModel.class);
-        gridAdapter = new GridAdapter(this,getContext());
+        gridAdapter = new GridAdapter(this, getContext());
         gridLayoutManager = new GridLayoutManager(getContext(), 2);
+        gridLayoutManager.setSpanCount(spanCount);
         recyclerView.setLayoutManager(gridLayoutManager);
         recyclerView.setAdapter(gridAdapter);
 
-        recyclerView.addOnScrollListener(new EndlessRecyclerViewScrollListener(gridLayoutManager) {
+        endlessListener = new EndlessRecyclerViewScrollListener(gridLayoutManager) {
             @Override
             public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
                 L.d("result page number " + page);
-                getImagesFromServer(page, isSearching, searchQuery);
-            }
-        });
+                getImagesFromServer(page, isSearching, searchQuery, false);
 
+                if (page == 1) {
+                    endlessListener.previousTotalItemCount = 0;
+                }
+            }
+        };
+
+        recyclerView.addOnScrollListener(endlessListener);
         imageViewModel.getAllImages().observe(this, new Observer<List<Image>>() {
             @Override
             public void onChanged(@Nullable List<Image> images) {
+                dismissDialog();
                 if (isSearching) {
-                    imageViewModel.getImagesStartingaWith(searchQuery);
+                    List<Image> newImages = new ArrayList<>();
+                    for (Image image : images) {
+                        if (image.getTag().startsWith(searchQuery)) {
+                            newImages.add(image);
+                        }
+                    }
+                    mSearchingImages = newImages;
+                    gridAdapter.setLoadedData(mSearchingImages);
                 } else {
-                    mImages = images;
-                    gridAdapter.setLoadedData(images);
+                    List<Image> newImages = new ArrayList<>();
+                    for (Image image : images) {
+                        if (image.getTag().length() == 0) {
+                            newImages.add(image);
+                        }
+                    }
+                    mImages = newImages;
+                    gridAdapter.setLoadedData(mImages);
                 }
             }
         });
@@ -105,7 +117,7 @@ public class GridFragment extends Fragment {
         prepareTransitions();
         postponeEnterTransition();
         if (Utility.isNetworkConnected(getContext())) {
-            getImagesFromServer(1, isSearching, searchQuery);
+            getImagesFromServer(1, isSearching, searchQuery, mImages.size()>0?false:true);
         }
         return recyclerView;
     }
@@ -116,49 +128,46 @@ public class GridFragment extends Fragment {
         return api;
     }
 
-    private void getImagesFromServer(final int page, final boolean isSearching, String query) {
+    private ProgressDialog progressDialog = null;
 
+    private void getImagesFromServer(final int page, final boolean isSearching, String query, boolean main) {
         if (!Utility.isNetworkConnected(getContext())) {
             return;
         }
 
+        if(main){
+            progressDialog = ProgressDialog.show(getContext(),"Loading...","");
+        }else{
+            gridAdapter.setShowProgress(true);
+        }
         L.d("getting images from server");
         Constants.getPhotos(isSearching ? query : "", getContext(), page, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 L.d("onSuccess " + page);
                 String string = new String(responseBody);
-
                 ImageModel image = ImageModel.objectFromData(string);
                 storeAndDownloadImages(image);
-
-                /*if (isSearching) {
-                    if (mSearchingImages.isEmpty()) {
-                        mSearchingImages = image.getHits();
-                    } else {
-                        mSearchingImages.addAll(image.getHits());
-                    }
-                    gridAdapter.setData(mSearchingImages);
-                } else {
-                    if (mImages.isEmpty()) {
-                        mImages = image.getHits();
-                    } else {
-                        mImages.addAll(image.getHits());
-                    }
-                    gridAdapter.setData(mImages);
-                }*/
-
+                dismissDialog();
+                gridAdapter.setShowProgress(false);
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 L.d("result onFailure " + error.getMessage());
+                dismissDialog();
+                gridAdapter.setShowProgress(false);
             }
         });
     }
 
-    private void storeAndDownloadImages(ImageModel image) {
+    private void dismissDialog() {
+        if(progressDialog!=null){
+            progressDialog.dismiss();
+        }
+    }
 
+    private void storeAndDownloadImages(ImageModel image) {
         for (ImageModel.HitsBean hitsBean : image.getHits()) {
             new DownloadFile(hitsBean).execute();
         }
@@ -190,8 +199,10 @@ public class GridFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... aurl) {
-            int count;
+
             String filePath = null;
+            /*
+            int count;
             try {
                 URL url = new URL(urlString);
                 URLConnection conexion = url.openConnection();
@@ -224,6 +235,7 @@ public class GridFragment extends Fragment {
             } catch (Exception e) {
                 L.d(e.getStackTrace());
             }
+*/
             return filePath;
         }
 
@@ -240,13 +252,7 @@ public class GridFragment extends Fragment {
             if (mProgressDialog != null) {
                 mProgressDialog.dismiss();
             }
-            if (result == null) {
-                return;
-            }
-            L.d(result);
-
-
-            Image image = new Image(String.valueOf(imageModel.getId()), result, false,searchQuery);
+            Image image = new Image(String.valueOf(imageModel.getId()), imageModel.getPreviewURL(), false,searchQuery);
             imageViewModel.insert(image);
         }
     }
@@ -308,20 +314,46 @@ public class GridFragment extends Fragment {
     }
 
     public void setSpanCount(int count) {
-        gridLayoutManager.setSpanCount(count);
+        spanCount = count;
+        gridLayoutManager.setSpanCount(spanCount);
     }
 
     public void isSearching(boolean isSearching,String query) {
         mSearchingImages.clear();
         searchQuery = query;
         this.isSearching = isSearching;
-
         if (!isSearching) {
             gridAdapter.setLoadedData(mImages);
+        } else {
+            if (isSearching && query.length() == 0) {
+                LiveData<List<Image>> liveImage = imageViewModel.getAllImages();
+                List<Image> images = liveImage.getValue();
+                List<Image> newImages = new ArrayList<>();
+                for (Image image : images) {
+                    if (image.getTag().length() == 0) {
+                        newImages.add(image);
+                    }
+                }
+                mImages = newImages;
+                gridAdapter.setLoadedData(mImages);
+            }
         }
 
         if (isSearching && query.length() > 0) {
-            getImagesFromServer(1, isSearching, query);
+            if (Utility.isNetworkConnected(getContext())) {
+                getImagesFromServer(1, isSearching, query, false);
+            } else {
+                LiveData<List<Image>> liveImage = imageViewModel.getAllImages();
+                List<Image> images = liveImage.getValue();
+                List<Image> newImages = new ArrayList<>();
+                for (Image image : images) {
+                    if (image.getTag().startsWith(searchQuery)) {
+                        newImages.add(image);
+                    }
+                }
+                mSearchingImages = newImages;
+                gridAdapter.setLoadedData(mSearchingImages);
+            }
         }
     }
 }

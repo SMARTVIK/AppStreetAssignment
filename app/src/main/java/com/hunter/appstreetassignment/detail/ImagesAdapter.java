@@ -1,4 +1,4 @@
-package com.hunter.appstreetassignment;
+package com.hunter.appstreetassignment.detail;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.hunter.appstreetassignment.R;
+import com.hunter.appstreetassignment.simplegallerycaching.ImageModel;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
