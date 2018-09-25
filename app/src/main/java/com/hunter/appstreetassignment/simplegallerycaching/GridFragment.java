@@ -63,6 +63,7 @@ public class GridFragment extends Fragment {
     private ImageViewModel imageViewModel;
     private EndlessRecyclerViewScrollListener endlessListener;
     private int spanCount = 2;
+    private boolean savingToDatabase;
 
     @Nullable
     @Override
@@ -91,33 +92,33 @@ public class GridFragment extends Fragment {
         imageViewModel.getAllImages().observe(this, new Observer<List<Image>>() {
             @Override
             public void onChanged(@Nullable List<Image> images) {
-                dismissDialog();
-                if (isSearching) {
-                    List<Image> newImages = new ArrayList<>();
-                    for (Image image : images) {
-                        if (image.getTag().startsWith(searchQuery)) {
-                            newImages.add(image);
+                if (!savingToDatabase) {
+                    if (isSearching) {
+                        List<Image> newImages = new ArrayList<>();
+                        for (Image image : images) {
+                            if (image.getTag().startsWith(searchQuery)) {
+                                newImages.add(image);
+                            }
                         }
-                    }
-                    mSearchingImages = newImages;
-                    gridAdapter.setLoadedData(mSearchingImages);
-                } else {
-                    List<Image> newImages = new ArrayList<>();
-                    for (Image image : images) {
-                        if (image.getTag().length() == 0) {
-                            newImages.add(image);
+                        mSearchingImages = newImages;
+                        gridAdapter.setLoadedData(mSearchingImages);
+                    } else {
+                        List<Image> newImages = new ArrayList<>();
+                        for (Image image : images) {
+                            if (image.getTag().length() == 0) {
+                                newImages.add(image);
+                            }
                         }
+                        mImages = newImages;
+                        gridAdapter.setLoadedData(mImages);
                     }
-                    mImages = newImages;
-                    gridAdapter.setLoadedData(mImages);
                 }
             }
         });
-
         prepareTransitions();
         postponeEnterTransition();
-        if (Utility.isNetworkConnected(getContext())) {
-            getImagesFromServer(1, isSearching, searchQuery, mImages.size()>0?false:true);
+        if (Utility.isNetworkConnected(getContext()) && mImages.size() == 0) {
+            getImagesFromServer(1, isSearching, searchQuery, mImages.size() > 0 ? false : true);
         }
         return recyclerView;
     }
@@ -134,7 +135,6 @@ public class GridFragment extends Fragment {
         if (!Utility.isNetworkConnected(getContext())) {
             return;
         }
-
         if(main){
             progressDialog = ProgressDialog.show(getContext(),"Loading...","");
         }else{
@@ -144,7 +144,7 @@ public class GridFragment extends Fragment {
         Constants.getPhotos(isSearching ? query : "", getContext(), page, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                L.d("onSuccess " + page);
+                savingToDatabase = true;
                 String string = new String(responseBody);
                 ImageModel image = ImageModel.objectFromData(string);
                 storeAndDownloadImages(image);
@@ -154,6 +154,7 @@ public class GridFragment extends Fragment {
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                savingToDatabase = false;
                 L.d("result onFailure " + error.getMessage());
                 dismissDialog();
                 gridAdapter.setShowProgress(false);
@@ -169,92 +170,10 @@ public class GridFragment extends Fragment {
 
     private void storeAndDownloadImages(ImageModel image) {
         for (ImageModel.HitsBean hitsBean : image.getHits()) {
-            new DownloadFile(hitsBean).execute();
+            Image images = new Image(String.valueOf(hitsBean.getId()), hitsBean.getPreviewURL(), false, searchQuery);
+            imageViewModel.insert(images);
         }
-    }
-
-    class DownloadFile extends AsyncTask<String,Long,String> {
-
-        private final ImageModel.HitsBean imageModel;
-        private String urlString;
-
-        public DownloadFile(ImageModel.HitsBean imageModel){
-            this.imageModel = imageModel;
-            urlString = imageModel.getPreviewURL();
-        }
-
-        ProgressDialog mProgressDialog = new ProgressDialog(getContext());// Change Mainactivity.this with your activity name.
-        String strFolderName="appStreet";
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-  /*          mProgressDialog.setMessage("Downloading");
-            mProgressDialog.setIndeterminate(false);
-            mProgressDialog.setMax(100);
-            mProgressDialog.setCancelable(true);
-            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            mProgressDialog.show();
-  */      }
-
-        @Override
-        protected String doInBackground(String... aurl) {
-
-            String filePath = null;
-            /*
-            int count;
-            try {
-                URL url = new URL(urlString);
-                URLConnection conexion = url.openConnection();
-                conexion.connect();
-                String targetFileName=urlString.substring(urlString.lastIndexOf("/")+1);//Change name and subname
-                int lenghtOfFile = conexion.getContentLength();
-                File SDCardRoot = new File(Environment.getExternalStorageDirectory(),"abcd");
-                if(!SDCardRoot.exists()){
-                    SDCardRoot.mkdir();
-                }
-                //create a new file, specifying the path, and the filename which we want to save the file as.
-                File file = new File(SDCardRoot,targetFileName);
-                InputStream input = new BufferedInputStream(url.openStream());
-                filePath = file.getAbsolutePath();
-                OutputStream output = new FileOutputStream(filePath);
-                byte data[] = new byte[1024];
-                long total = 0;
-
-                while ((count = input.read(data)) != -1) {
-                    total += count;
-                    long integer = (total * 100 / lenghtOfFile);
-                    publishProgress(integer);
-                    output.write(data, 0, count);
-                }
-
-                output.flush();
-                output.close();
-                input.close();
-                return filePath;
-            } catch (Exception e) {
-                L.d(e.getStackTrace());
-            }
-*/
-            return filePath;
-        }
-
-        protected void onProgressUpdate(Long... progress) {
-    /*        mProgressDialog.setProgress(progress[0].intValue());
-            if(mProgressDialog.getProgress()==mProgressDialog.getMax()){
-                mProgressDialog.dismiss();
-                Toast.makeText(getContext(), "File Downloaded", Toast.LENGTH_SHORT).show();
-            }
-    */    }
-
-        @Override
-        protected void onPostExecute(String result) {
-            if (mProgressDialog != null) {
-                mProgressDialog.dismiss();
-            }
-            Image image = new Image(String.valueOf(imageModel.getId()), imageModel.getPreviewURL(), false,searchQuery);
-            imageViewModel.insert(image);
-        }
+        savingToDatabase = false;
     }
 
     @Override
@@ -307,7 +226,6 @@ public class GridFragment extends Fragment {
                             return;
                         }
 
-                        L.d("everything seems right");
                         sharedElements.put(names.get(0), selectedViewHolder.itemView.findViewById(R.id.image));
                     }
                 });

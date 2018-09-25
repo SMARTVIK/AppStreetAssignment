@@ -19,24 +19,23 @@ public class MyApplication extends Application {
         buildGlide();
     }
 
-    private void buildGlide(){
+    private void buildGlide() {
         GlideBuilder gb = new GlideBuilder();
         LruResourceCache lruMemCache = new LruResourceCache(getMemCacheSize(8));
         gb.setMemoryCache(lruMemCache);
         InternalCacheDiskCacheFactory diskCacheFactory = new InternalCacheDiskCacheFactory(this, 300);
         gb.setDiskCache(diskCacheFactory);
-        LruBitmapPool bitmapPool = new LruBitmapPool(getMemCacheSize(8)/10);
+        LruBitmapPool bitmapPool = new LruBitmapPool(getMemCacheSize(8) / 10);
         gb.setBitmapPool(bitmapPool);
         //set custom Glide as global singleton
         Glide.init(gb.build(this));
     }
 
-    private int getMemCacheSize(int percent){
+    private int getMemCacheSize(int percent) {
         ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
         ((ActivityManager)
                 getSystemService(ACTIVITY_SERVICE)).getMemoryInfo(mi);
-        double availableMemory= mi.availMem;
-        return (int)(percent*availableMemory/100);
+        double availableMemory = mi.availMem;
+        return (int) (percent * availableMemory / 100);
     }
-
 }

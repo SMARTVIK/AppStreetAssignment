@@ -97,7 +97,7 @@ public class GridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public void setShowProgress(boolean showProgress) {
         this.showProgress = showProgress;
-        notifyDataSetChanged();
+//        notifyDataSetChanged();
     }
 
     @Override
@@ -206,7 +206,6 @@ public class GridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                        L.d(loadedData.get(adapterPosition).getImagePath());
                         viewHolderListener.onLoadCompleted(image, adapterPosition);
                         return false;
                     }

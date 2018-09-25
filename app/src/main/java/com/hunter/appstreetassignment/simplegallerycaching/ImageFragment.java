@@ -51,7 +51,6 @@ public class ImageFragment extends Fragment {
 
                   @Override
                   public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
-                      L.d("onResourceReady");
                       getParentFragment().startPostponedEnterTransition();
                       return false;
                   }
